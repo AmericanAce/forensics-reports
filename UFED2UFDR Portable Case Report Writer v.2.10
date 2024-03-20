@@ -1,0 +1,142 @@
+#Requestor information
+
+#The initial code asks the user to input the date that the examination request was made.  It allows a user to input a number of different combinations of date formats and converts it to the written out Month, DD, YYYY in the paragraphs below.
+
+import datetime
+
+def parse_date(input_date):
+    formats = ['%m/%d/%Y', '%m/%d/%y', '%-m/%-d/%y', '%-m/%-d/%Y', '%m/%-d/%y', '%m/%-d/%Y', 
+               '%-m/%d/%y', '%-m/%d/%Y', '%m-%d-%Y', '%m-%d-%y', '%-m-%d-%y', '%-m-%d-%Y', 
+               '%m-%d-%y', '%m-%d-%Y', '%-m-%d-%y', '%-m-%d-%Y']
+    for fmt in formats:
+        try:
+            date_obj = datetime.datetime.strptime(input_date, fmt)
+            return date_obj.strftime("%B %d, %Y")
+        except ValueError:
+            pass
+    return None
+
+input_date = input("Examination Request Date? (M/D/Y) ")
+
+formatted_request_date = parse_date(input_date)
+while formatted_request_date is None:
+    print("Invalid date format. Please enter a valid date in one of the accepted formats.")
+    input_date = input("Examination Request Date? (M/D/Y) ")
+    formatted_request_date = parse_date(input_date)
+
+Request_Date = formatted_request_date
+
+#This code is the remaining request information from the case.  It will capitalize proper nouns in the event the user inputs lower case data.  If the user inputs initials for a 4 character or shorter agency, it will capitalize all of the letters.  It will also capitalize the title of the requesting officer or make the initials for a 2 character or smaller title all caps.
+Request_Agency = input("Requesting Agency? ")
+if len(Request_Agency) <= 4:
+    Request_Agency = Request_Agency.upper()
+else:
+    Request_Agency = ' '.join(word.capitalize() for word in Request_Agency.split())
+Request_Title = input("Requesting Officer Title? ").title()
+if len(Request_Title) <= 2:
+    Request_Title = Request_Title.upper()
+else:
+    Request_Title = ' '.join(word.capitalize() for word in Request_Title.split())
+
+Request_Officer = input("Requesting Officer? ").title()
+Request_Case = input("Case Type? ")
+
+#This code asks the user to indicate if the device was in Airplane Mode when it was received ot not and will not proceed unless the user inputs Y or N
+while True:
+    Device_Airplane = input("Airplane Mode On When Received? (Y/N) ").lower()
+    if Device_Airplane in ['y', 'n']:
+        break
+    else:
+        print("Invalid input. Pleae enter 'y' or 'n'.")
+Device_Owner = input("Device Owner? ").title()
+
+#Post Exam Information
+Examiner_Title = input("Your Title? ").title()
+if len(Request_Title) <= 2:
+    Examiner_Title = Examiner_Title.upper()
+else:
+    Examiner_Title = ' '.join(word.capitalize() for word in Examiner_Title.split())
+Examiner_Name = input("Your Name? ").title()
+Examiner_City = input("Your Duty Station? ").title()
+
+#Prompt the user to enter the filepath for the UFD file and strip the " marks when the file is drug and dropped into the CMD line
+UFD_file = input("Enter the filepath for your UFD file here: ").strip('"')
+
+#Initialize variables
+extraction_date = ""
+extraction_tool = ""
+extraction_type = ""
+device_model = ""
+device_manufacturer = ""
+
+#Read the UFD file and extract information
+with open(UFD_file, "r") as file:
+    for line in file:
+        try:
+            key, value = line.strip().split('=')
+            if key == 'Date':
+                extraction_date = value
+            elif key == 'AcquisitionTool':
+                extraction_tool = value
+            elif key == 'ExtractionType':
+                extraction_type = value
+            elif key == 'Model':
+                device_model = value
+            elif key == 'Vendor':
+                device_manufacturer = value.title()
+        except ValueError:
+            print(f"Ignoring this line")
+
+#Split the timestamp string and extract the date components
+date_components = extraction_date.split()[0].split('/')
+format_month = date_components[1]
+format_day = date_components[0]
+format_year = date_components[2]
+
+#Format the date components into month/day/year format
+formatted_date = f"{format_month}/{format_day}/{format_year}"
+
+lines = [
+
+]
+paragraph_one = f"On {Request_Date}, I, {Examiner_Title} {Examiner_Name}, with the <INSERT YOUR AGENCY NAME HERE>, received a request for a forensic examination from {Request_Title} {Request_Officer} with the {Request_Agency}.  I was advised this particular device belongs to {Device_Owner} and was submitted for examination regarding a {Request_Case} investigation. \n \n"
+
+paragraph_two = f"The device described in this report consists of a {device_manufacturer} {device_model} cell phone.  This device will be referred to as the \"source device\" throughout the remainder of this report. \n \n"
+
+paragraph_three = f"Upon receiving the source device, I observed it was placed in airplane mode, which disables all the wireless radios of a cellular device. This mode of operation eliminates all incoming and outgoing wireless signals to and from the device and ensures that no data can be remotely added, deleted, or altered on the device. \n \n"
+
+paragraph_four = f"Upon receiving the source device, I observed it was not in airplane mode.  I enabled airplane mode on the source device, which disables all the wireless radios of a cellular device. This mode of operation eliminates all incoming and outgoing wireless signals to and from the device and ensures that no data can be remotely added, deleted, or altered on the device. \n \n"
+
+paragraph_five = f"The purpose of this forensic examination was to attempt to recover any and all data and information contained on the source hard drive that is related to, or is of evidentiary value regarding, the {Request_Case} investigation being conducted by the {Request_Agency}. \n \n"
+
+paragraph_six = f"---FORENSIC EXTRACTION---\n\n"
+
+paragraph_seven = f"On {formatted_date}, I connected the source device to my forensic machine and, utilizing the Cellebrite UFED 4PC software, obtained a {extraction_type} extraction from the source device. \n \n"
+
+paragraph_eight = f"The extracted data was loaded into the Cellebrite Physical Analyzer forensic software.  Utilizing the Physical Analyzer software, I was able to recover various items of data and information from within the {extraction_type} extraction.  \n \n"
+
+paragraph_nine = f"After the data and information contained within the {extraction_type} extraction had been processed using the Physical Analyzer software, I created a UFED Reader report of the processed data and provided the report to {Request_Title} {Request_Officer}. \n \n"
+
+paragraph_ten = f"Unless requested, I will not be conducting any further examination of the extracted data. \n \n"
+
+paragraph_eleven = f"A copy of the extracted data will be stored at the {Examiner_City} <AGENCY NAME HERE - CAN DELETE EXAMINER_CITY AND PROMPT ABOVE IF NEEDED> office."
+
+#Script will then prompt for the user to choose a filename for the output file.  It will choose between including Paragraph 3 or Pragraph 4 based on the users input regarding Airplane Mode being on or off.  
+    #NOTE: Paragraph 4 assumes the examiner turned on airplane mode.
+output_path = input("Enter report name here, include .txt at the end of the name: ")
+with open(output_path, "w") as file:
+    file.write(paragraph_one)
+    file.write(paragraph_two)
+    if Device_Airplane == 'y':
+        file.write(paragraph_three)
+    elif Device_Airplane == 'n':
+        file.write(paragraph_four)
+    file.write(paragraph_five)
+    file.write(paragraph_six)
+    file.write(paragraph_seven)
+    file.write(paragraph_eight)
+    file.write(paragraph_nine)
+    file.write(paragraph_ten)
+    file.write(paragraph_eleven)
+    
+print("Report generated and saved as " + (output_path) + ".")
